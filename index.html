@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>感情 to Music</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px; /* 最大幅を設定 */
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #1c1e21;
+        }
+        p {
+            font-size: 1.2em;
+            color: #606770;
+            margin-bottom: 30px;
+        }
+        .emotion-buttons button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 30px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 5px 10px; /* モバイル表示のためにマージンを調整 */
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .emotion-buttons button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        #music-player {
+            margin-top: 40px;
+        }
+        #status-text {
+            font-size: 1.1em;
+            color: #606770;
+            min-height: 24px; /* テキストの高さがなくてもガタつかないように */
+        }
+        #audio-player {
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>感情 to Music 🎵</h1>
+        <p>あなたの今の感情を教えてください。</p>
+        <div class="emotion-buttons">
+            <button class="emotion-btn" data-emotion="happy">嬉しい 😄</button>
+            <button class="emotion-btn" data-emotion="sad">悲しい 😢</button>
+            <button class="emotion-btn" data-emotion="excited">ワクワク ✨</button>
+            <button class="emotion-btn" data-emotion="calm">穏やか 😌</button>
+        </div>
+        <div id="music-player">
+            <p id="status-text">音楽を生成しています...</p>
+            <audio id="audio-player" controls></audio>
+        </div>
+    </div>
+
+    <script>
+        const emotionButtons = document.querySelectorAll('.emotion-btn');
+        const statusText = document.getElementById('status-text');
+        const audioPlayer = document.getElementById('audio-player');
+        
+        // 初期状態ではプレイヤーを隠す
+        statusText.style.display = 'none';
+        audioPlayer.style.display = 'none';
+
+        emotionButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const selectedEmotion = event.target.dataset.emotion;
+                
+                // 音楽生成中のメッセージを表示
+                statusText.style.display = 'block';
+                statusText.textContent = `${selectedEmotion} の音楽を生成しています...`;
+                audioPlayer.style.display = 'none';
+
+                // 司令塔（バックエンド）にリクエストを送信
+                fetch('http://127.0.0.1:5000/generate-music', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ emotion: selectedEmotion })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('司令塔からの応答:', data);
+                    if (data.musicUrl) {
+                        statusText.textContent = '音楽が完成しました！';
+                        audioPlayer.src = data.musicUrl;
+                        audioPlayer.style.display = 'block';
+                        // audioPlayer.play(); // 自動再生する場合
+                    } else {
+                        statusText.textContent = 'エラーが発生しました。';
+                    }
+                })
+                .catch(error => {
+                    console.error('エラー:', error);
+                    statusText.textContent = '通信エラーが発生しました。';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
